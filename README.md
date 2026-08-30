@@ -36,7 +36,7 @@ cancelar el servicio, para que el equipo de retención pueda priorizar acciones
 
 - [x] Selección de dataset y problema
 - [x] EDA inicial y baseline con Logistic Regression
-- [ ] Experiment tracking con MLflow (Fase 2)
+- [x] Experiment tracking con MLflow (Fase 2)
 - [ ] Pipeline orquestado con Prefect (Fase 3)
 - [ ] API de predicción + Docker (Fase 4)
 - [ ] Propuesta de monitoreo (Fase 5)
@@ -76,5 +76,14 @@ uv run jupyter lab notebooks/01_eda.ipynb
 |---|---|---|---|
 | Logistic Regression | 0.92 | 0.84 | 0.42 |
 
-## Roadmap
+## Resultados de experimentos (MLflow)
+
+| Modelo | ROC-AUC | Precision (Churn) | Recall (Churn) |
+|---|---|---|---|
+| Logistic Regression | 0.92 | 0.84 | 0.42 |
+| Random Forest (balanced) | 0.98 | 0.73 | 0.97 |
+| **XGBoost (scale_pos_weight) — campeón** | 0.99 | 0.85 | 0.94 |
+
+Experimentos trackeados con MLflow (backend SQLite local). El modelo XGBoost quedó
+registrado en el Model Registry como `churn-prediction-model`, alias `champion`.
 
