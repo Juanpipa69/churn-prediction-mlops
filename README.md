@@ -21,23 +21,20 @@ cancelar el servicio, para que el equipo de retención pueda priorizar acciones
 
 ## Objetivo y métrica de éxito
 
-- **Métrica técnica principal:** ROC-AUC ≥ 0.85 en el set de validación.
+- **Métrica técnica principal:** ROC-AUC ≥ 0.85 en el set de validación. ✅ Cumplido (0.99 con el modelo campeón).
 - **Métrica de negocio:** dado que el costo de *no detectar* a un cliente que
   se va (falso negativo) es mayor que el de contactar a alguien que no iba a
   irse (falso positivo), priorizamos **recall de la clase Churn ≥ 0.65**
   manteniendo una precisión razonable (≥ 0.6), ajustando el umbral de decisión
-  en vez de usar el 0.5 por defecto.
-- **Baseline actual:** Logistic Regression — ROC-AUC 0.92, recall Churn 0.42,
-  precisión Churn 0.84. El ROC-AUC ya cumple el objetivo técnico; el recall
-  todavía no cumple el objetivo de negocio y es el primer punto a mejorar al
-  comparar modelos en la Fase 2 (tracking con MLflow).
+  en vez de usar el 0.5 por defecto. ✅ Cumplido (recall 0.94, precisión 0.85).
+- **Modelo campeón:** XGBoost con `scale_pos_weight` para compensar el desbalance de clases (ver tabla de resultados abajo).
 
-## Alcance (MVP de esta primera fase)
+## Alcance del proyecto
 
 - [x] Selección de dataset y problema
 - [x] EDA inicial y baseline con Logistic Regression
 - [x] Experiment tracking con MLflow (Fase 2)
-- [ ] Pipeline orquestado con Prefect (Fase 3)
+- [x] Pipeline orquestado con Prefect (Fase 3)
 - [ ] API de predicción + Docker (Fase 4)
 - [ ] Propuesta de monitoreo (Fase 5)
 - [ ] Tests, linter y documentación final (Fase 6)
@@ -47,14 +44,22 @@ cancelar el servicio, para que el equipo de retención pueda priorizar acciones
 churn-prediction-mlops/
 ├── README.md
 ├── pyproject.toml / uv.lock
+├── notebooks/
+│ ├── 01_eda.ipynb
+│ ├── 02_baseline.ipynb
+│ └── 03_experiment_tracking.ipynb
 ├── src/
-│ └── data/
-│ └── fetch_data.py # descarga el dataset (ucimlrepo)
-├── data/
-│ └── raw/churn.csv # generado localmente, no versionado
-└── notebooks/
-├── 01_eda.ipynb
-└── 02_baseline.ipynb
+│ ├── data/
+│ │ ├── fetch_data.py # descarga el dataset (ucimlrepo)
+│ │ └── validate.py # valida columnas esperadas, nulos y tamaño mínimo
+│ ├── features/
+│ │ └── preprocessing.py # ColumnTransformer (imputación + escalado + one-hot)
+│ ├── models/
+│ │ └── train.py # entrena, evalúa y loguea cada modelo en MLflow
+│ └── flows/
+│ └── training_flow.py # flow de Prefect: carga -> valida -> split -> entrena -> registra el campeón
+└── data/
+└── raw/churn.csv # generado localmente, no versionado
 
 
 ## Cómo ejecutar el proyecto
@@ -64,17 +69,24 @@ churn-prediction-mlops/
 uv sync
 
 # 2. Descargar el dataset
-uv run python src/data/fetch_data.py
+uv run python -m src.data.fetch_data
 
-# 3. Abrir los notebooks en orden
+# 3. Correr el pipeline completo de entrenamiento (orquestado con Prefect)
+uv run python -m src.flows.training_flow
+
+# 4. (Opcional) explorar el proceso paso a paso en los notebooks
 uv run jupyter lab notebooks/01_eda.ipynb
 ```
 
-## Resultados del baseline
+El pipeline entrena Logistic Regression, Random Forest y XGBoost, los compara
+en MLflow, y registra automáticamente el de mejor ROC-AUC como `champion` en
+el Model Registry (`churn-prediction-model`).
 
-| Modelo | ROC-AUC | Precision (Churn) | Recall (Churn) |
-|---|---|---|---|
-| Logistic Regression | 0.92 | 0.84 | 0.42 |
+Para ver el tracking en la interfaz de MLflow:
+```bash
+uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
+y abrir `http://127.0.0.1:5000`.
 
 ## Resultados de experimentos (MLflow)
 
@@ -84,6 +96,10 @@ uv run jupyter lab notebooks/01_eda.ipynb
 | Random Forest (balanced) | 0.98 | 0.73 | 0.97 |
 | **XGBoost (scale_pos_weight) — campeón** | 0.99 | 0.85 | 0.94 |
 
-Experimentos trackeados con MLflow (backend SQLite local). El modelo XGBoost quedó
-registrado en el Model Registry como `churn-prediction-model`, alias `champion`.
+## Roadmap
 
+- **Fase 4 — Deployment:** API de predicción con FastAPI, contenedor Docker.
+- **Fase 5 — Monitoreo:** propuesta de métricas de negocio y drift a vigilar.
+- **Fase 6 — Testing y buenas prácticas:** tests unitarios, linter (`ruff`) configurado en CI, pre-commit hooks.
+
+Este README se actualiza al cierre de cada fase.
