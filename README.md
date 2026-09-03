@@ -35,7 +35,7 @@ cancelar el servicio, para que el equipo de retención pueda priorizar acciones
 - [x] EDA inicial y baseline con Logistic Regression
 - [x] Experiment tracking con MLflow (Fase 2)
 - [x] Pipeline orquestado con Prefect (Fase 3)
-- [ ] API de predicción + Docker (Fase 4)
+- [x] API de predicción + Docker (Fase 4)
 - [ ] Propuesta de monitoreo (Fase 5)
 - [ ] Tests, linter y documentación final (Fase 6)
 
@@ -62,7 +62,7 @@ churn-prediction-mlops/
 └── raw/churn.csv # generado localmente, no versionado
 
 
-## Cómo ejecutar el proyecto
+## Cómo ejecutar el proyecto desde cero
 
 ```bash
 # 1. Instalar dependencias
@@ -71,22 +71,25 @@ uv sync
 # 2. Descargar el dataset
 uv run python -m src.data.fetch_data
 
-# 3. Correr el pipeline completo de entrenamiento (orquestado con Prefect)
+# 3. Entrenar, comparar modelos y registrar el campeón (orquestado con Prefect)
 uv run python -m src.flows.training_flow
 
-# 4. (Opcional) explorar el proceso paso a paso en los notebooks
-uv run jupyter lab notebooks/01_eda.ipynb
+# 4. Exportar el modelo campeón a una carpeta autocontenida
+uv run python scripts/export_model.py
+
+# 5. Correr la API localmente
+uv run uvicorn src.api.main:app --reload --port 8000
+# -> documentación interactiva en http://127.0.0.1:8000/docs
+
+# 6. O correr la API en Docker
+docker build -t churn-prediction-api .
+docker run -p 8000:8000 churn-prediction-api
 ```
 
-El pipeline entrena Logistic Regression, Random Forest y XGBoost, los compara
-en MLflow, y registra automáticamente el de mejor ROC-AUC como `champion` en
-el Model Registry (`churn-prediction-model`).
+## API de predicción
 
-Para ver el tracking en la interfaz de MLflow:
-```bash
-uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
-```
-y abrir `http://127.0.0.1:5000`.
+- `GET /health` — verifica que la API está viva y el modelo cargado.
+- `POST /predict` — recibe los datos de un cliente y devuelve la predicción de churn y su probabilidad.
 
 ## Resultados de experimentos (MLflow)
 
