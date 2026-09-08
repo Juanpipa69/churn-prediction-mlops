@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "evidently>=0.7.21",
     "fastapi>=0.141.1",
     "matplotlib>=3.11.1",
     "mlflow>=2.14",
