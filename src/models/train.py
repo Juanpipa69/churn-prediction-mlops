@@ -1,13 +1,13 @@
 """Entrenamiento, evaluación y logueo en MLflow de los modelos candidatos."""
 
+import mlflow
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
-from sklearn.metrics import roc_auc_score, precision_score, recall_score, f1_score
-import mlflow
 
 from src.features.preprocessing import build_preprocessor
 

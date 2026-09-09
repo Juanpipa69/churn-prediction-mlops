@@ -1,8 +1,8 @@
 """API REST para predicción de churn, sirve el modelo campeón desde el Model Registry de MLflow."""
 
+import os
 from contextlib import asynccontextmanager
 
-import os
 import mlflow
 import pandas as pd
 from fastapi import FastAPI, HTTPException

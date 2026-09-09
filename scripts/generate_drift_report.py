@@ -6,8 +6,8 @@ Compara el split de entrenamiento (reference) contra el split de prueba
 """
 from pathlib import Path
 
-from evidently.legacy.report import Report
 from evidently.legacy.metric_preset import DataDriftPreset
+from evidently.legacy.report import Report
 
 from src.models.train import load_data, split_data
 
