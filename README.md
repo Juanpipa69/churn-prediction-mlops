@@ -3,7 +3,7 @@
 Proyecto final del curso de MLOps (Especialización en Ciencia de Datos e IA).
 Pipeline end-to-end para predecir la cancelación (churn) de clientes de una
 compañía de telecomunicaciones: tracking de experimentos, orquestación,
-despliegue y monitoreo sobre un modelo de clasificación.
+despliegue, monitoreo y buenas prácticas sobre un modelo de clasificación.
 
 ## Problema de negocio
 
@@ -37,33 +37,49 @@ cancelar el servicio, para que el equipo de retención pueda priorizar acciones
 - [x] Pipeline orquestado con Prefect (Fase 3)
 - [x] API de predicción + Docker (Fase 4)
 - [x] Propuesta de monitoreo (Fase 5)
-- [ ] Tests, linter y documentación final (Fase 6)
+- [x] Tests, linter y pre-commit (Fase 6)
 
 ## Estructura del repositorio
 
+```
 churn-prediction-mlops/
 ├── README.md
-├── pyproject.toml / uv.lock
-├── notebooks/
-│ ├── 01_eda.ipynb
-│ ├── 02_baseline.ipynb
-│ └── 03_experiment_tracking.ipynb
-├── src/
-│ ├── data/
-│ │ ├── fetch_data.py # descarga el dataset (ucimlrepo)
-│ │ └── validate.py # valida columnas esperadas, nulos y tamaño mínimo
-│ ├── features/
-│ │ └── preprocessing.py # ColumnTransformer (imputación + escalado + one-hot)
-│ ├── models/
-│ │ └── train.py # entrena, evalúa y loguea cada modelo en MLflow
-│ └── flows/
-│ └── training_flow.py # flow de Prefect: carga -> valida -> split -> entrena -> registra el campeón
-└── data/
+├── pyproject.toml
+├── uv.lock
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+├── .pre-commit-config.yaml
 ├── docs/
-│   └── monitoring.md
-└── raw/churn.csv # generado localmente, no versionado
-
-
+│   └── monitoring.md              # diseño de monitoreo (Fase 5)
+├── notebooks/
+│   ├── 01_eda.ipynb
+│   ├── 02_baseline.ipynb
+│   └── 03_experiment_tracking.ipynb
+├── scripts/
+│   ├── export_model.py            # exporta el modelo campeón a models/champion/
+│   └── generate_drift_report.py   # prueba de concepto de drift con Evidently
+├── src/
+│   ├── data/
+│   │   ├── fetch_data.py          # descarga el dataset (ucimlrepo)
+│   │   └── validate.py            # valida columnas, nulos y tamaño mínimo
+│   ├── features/
+│   │   └── preprocessing.py       # ColumnTransformer (imputación + escalado + one-hot)
+│   ├── models/
+│   │   └── train.py               # entrena, evalúa y loguea cada modelo en MLflow
+│   ├── flows/
+│   │   └── training_flow.py       # flow de Prefect: carga -> valida -> split -> entrena -> registra el campeón
+│   └── api/
+│       ├── main.py                # API FastAPI (/health, /predict)
+│       └── schemas.py             # esquemas Pydantic de entrada/salida
+├── tests/
+│   ├── test_validate.py
+│   ├── test_preprocessing.py
+│   └── test_api.py
+├── data/raw/churn.csv             # generado localmente, no versionado
+├── models/champion/                # generado localmente, no versionado
+└── reports/drift_report.html      # generado localmente, no versionado
+```
 
 ## Cómo ejecutar el proyecto desde cero
 
@@ -89,10 +105,39 @@ docker build -t churn-prediction-api .
 docker run -p 8000:8000 churn-prediction-api
 ```
 
+## Calidad de código y tests (Fase 6)
+
+- **Linter:** `ruff`, configurado en `pyproject.toml` (`[tool.ruff]`).
+- **Tests unitarios:** `pytest`, en `tests/` — cubren validación de datos, preprocesamiento y la lógica de la API.
+- **Pre-commit hooks:** `.pre-commit-config.yaml` — limpieza de espacios en blanco, fin de archivo, y `ruff` automático antes de cada commit.
+
+```bash
+uv run ruff check .                  # linter
+uv run pytest -v                     # tests unitarios
+uv run pre-commit run --all-files    # todos los hooks de pre-commit
+```
+
+Si clonas el repo por primera vez, instala los hooks de pre-commit una sola vez con:
+
+```bash
+uv run pre-commit install
+```
+
 ## API de predicción
 
 - `GET /health` — verifica que la API está viva y el modelo cargado.
 - `POST /predict` — recibe los datos de un cliente y devuelve la predicción de churn y su probabilidad.
+
+## Monitoreo (Fase 5)
+
+El diseño completo de monitoreo está documentado en [`docs/monitoring.md`](docs/monitoring.md): métricas de negocio a vigilar, estrategia de detección de *data drift* con [Evidently AI](https://www.evidentlyai.com/) sobre las variables más predictivas, y el criterio de re-entrenamiento propuesto.
+
+Como prueba de concepto, `scripts/generate_drift_report.py` genera un reporte real de drift comparando el split de entrenamiento contra el de prueba:
+
+```bash
+uv run python -m scripts.generate_drift_report
+# -> reports/drift_report.html
+```
 
 ## Resultados de experimentos (MLflow)
 
@@ -102,10 +147,12 @@ docker run -p 8000:8000 churn-prediction-api
 | Random Forest (balanced) | 0.98 | 0.73 | 0.97 |
 | **XGBoost (scale_pos_weight) — campeón** | 0.99 | 0.85 | 0.94 |
 
-## Roadmap
+## Trabajo futuro
 
-- **Fase 4 — Deployment:** API de predicción con FastAPI, contenedor Docker.
-- **Fase 5 — Monitoreo:** propuesta de métricas de negocio y drift a vigilar.
-- **Fase 6 — Testing y buenas prácticas:** tests unitarios, linter (`ruff`) configurado en CI, pre-commit hooks.
+- Despliegue en la nube y pipeline de CI/CD (`.github/workflows/`).
+- Automatizar la generación del reporte de drift como un flow de Prefect programado.
+- Alertas automáticas cuando se cumpla el criterio de re-entrenamiento definido en `docs/monitoring.md`.
 
-Este README se actualiza al cierre de cada fase.
+---
+
+Este README se actualiza al cierre de cada fase del proyecto.
