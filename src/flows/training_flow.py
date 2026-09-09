@@ -2,10 +2,16 @@
 
 import mlflow
 from mlflow import MlflowClient
-from prefect import flow, task, get_run_logger
+from prefect import flow, get_run_logger, task
 
-from src.models.train import load_data, split_data, get_candidate_models, train_and_evaluate, log_run
 from src.data.validate import validate_data
+from src.models.train import (
+    get_candidate_models,
+    load_data,
+    log_run,
+    split_data,
+    train_and_evaluate,
+)
 
 EXPERIMENT_NAME = "churn-prediction"
 TRACKING_URI = "sqlite:///mlflow.db"

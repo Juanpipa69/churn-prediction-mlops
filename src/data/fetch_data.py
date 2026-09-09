@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from ucimlrepo import fetch_ucirepo
 
 RAW_DATA_PATH = Path("data/raw/churn.csv")
