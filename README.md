@@ -36,7 +36,7 @@ cancelar el servicio, para que el equipo de retención pueda priorizar acciones
 - [x] Experiment tracking con MLflow (Fase 2)
 - [x] Pipeline orquestado con Prefect (Fase 3)
 - [x] API de predicción + Docker (Fase 4)
-- [ ] Propuesta de monitoreo (Fase 5)
+- [x] Propuesta de monitoreo (Fase 5)
 - [ ] Tests, linter y documentación final (Fase 6)
 
 ## Estructura del repositorio
@@ -59,7 +59,10 @@ churn-prediction-mlops/
 │ └── flows/
 │ └── training_flow.py # flow de Prefect: carga -> valida -> split -> entrena -> registra el campeón
 └── data/
+├── docs/
+│   └── monitoring.md
 └── raw/churn.csv # generado localmente, no versionado
+
 
 
 ## Cómo ejecutar el proyecto desde cero

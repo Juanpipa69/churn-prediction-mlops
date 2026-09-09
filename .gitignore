@@ -6,3 +6,4 @@ mlflow.db
 mlruns/
 mlartifacts/
 /models/
+/reports/
